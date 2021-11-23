@@ -15,9 +15,12 @@
  */
 package com.example.android.didyoufeelit;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import android.widget.TextView;
+
+import java.net.URL;
 
 /**
  * Displays the perceived strength of a single earthquake event based on responses from people who
@@ -34,24 +37,36 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Perform the HTTP request for earthquake data and process the response.
-        Event earthquake = Utils.fetchEarthquakeData(USGS_REQUEST_URL);
-
-        // Update the information displayed to the user.
-        updateUi(earthquake);
+        // Kick off an {@link AsyncTask} to perform the network request
+        EarthquakeAsyncTask task = new EarthquakeAsyncTask();
+        task.execute(USGS_REQUEST_URL);
     }
 
     /**
      * Update the UI with the given earthquake information.
      */
     private void updateUi(Event earthquake) {
-        TextView titleTextView = (TextView) findViewById(R.id.title);
+        TextView titleTextView = findViewById(R.id.title);
         titleTextView.setText(earthquake.title);
 
-        TextView tsunamiTextView = (TextView) findViewById(R.id.number_of_people);
+        TextView tsunamiTextView = findViewById(R.id.number_of_people);
         tsunamiTextView.setText(getString(R.string.num_people_felt_it, earthquake.numOfPeople));
 
-        TextView magnitudeTextView = (TextView) findViewById(R.id.perceived_magnitude);
+        TextView magnitudeTextView = findViewById(R.id.perceived_magnitude);
         magnitudeTextView.setText(earthquake.perceivedStrength);
+    }
+
+    private class EarthquakeAsyncTask extends AsyncTask<String, Void, Event> {
+        @Override
+        protected Event doInBackground(String... urls) {
+            // Perform the HTTP request for earthquake data and process the response.
+            return Utils.fetchEarthquakeData(urls[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Event result) {
+            // Update the information displayed to the user.
+            updateUi(result);
+        }
     }
 }
